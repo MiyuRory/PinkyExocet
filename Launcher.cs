@@ -52,9 +52,11 @@ namespace PinkyExocet
                 try
                 {
                     var cleanUser = RemoveAtIfFirst(x.Trim());
-                    if (!await blockListManager.IsInTheListAsync(cleanUser, cancellationTokenSource.Token))
+                    if (!await blockListManager.IsInTheListAsync(cleanUser, cancellationTokenSource.Token)){
                         await twitterBot.BlockUserAsync(cleanUser, cancellationTokenSource.Token); // Suponiendo que BlockUser es ahora BlockUserAsync y es asíncrono
-                    await blockListManager.SaveInTheListAsync(cleanUser);
+                        await blockListManager.SaveInTheListAsync(cleanUser);
+                    }
+                        
                 }
                 catch (Exception)
                 {
@@ -75,8 +77,11 @@ namespace PinkyExocet
                     try
                     {
                         if (!await blockListManager.IsInTheListAsync(kv.Key, cancellationTokenSource.Token))
+                        {
                             await twitterBot.BlockUserAsync(kv.Key, cancellationTokenSource.Token); // Usa la versión asíncrona
-                        await blockListManager.SaveInTheListAsync(kv.Key);
+                            await blockListManager.SaveInTheListAsync(kv.Key);
+                        }
+                            
                     }
                     catch (Exception)
                     {

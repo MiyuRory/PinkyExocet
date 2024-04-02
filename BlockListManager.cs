@@ -17,10 +17,10 @@ public class BlockListManager
     {
         if (!File.Exists(_filePath))
         {
-            using (var stream = File.Create(_filePath))
-            {
-                await stream.FlushAsync(cancellationToken); // Asegura que todo el contenido sea escrito al disco.
-            }
+            using var stream = File.Create(_filePath);
+
+            await stream.FlushAsync(cancellationToken); // Asegura que todo el contenido sea escrito al disco.
+
         }
     }
 

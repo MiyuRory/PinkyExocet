@@ -104,12 +104,38 @@ namespace PinkyExocet
                 ///html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/form[1]/div[2]/div[1]/div[4]/div[1]/div[1]/span[1]
                 try
                 {
+                    IReadOnlyList<IWebElement> realMatch = new List<IWebElement>();
+                    IWebElement firstResult = null;
                     await RetryPolicyHelper.ExecuteWithRetryAsync(async () =>
                     {
                         await Task.Delay(GenerateRandomNumber() + 1000);
-                        var firstResult = bot.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/form[1]/div[2]/div[1]/div[4]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/span[1]"));
-                        firstResult.Click();
+                        firstResult = bot.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/form[1]/div[2]/div[1]/div[4]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/span[1]"));
+                        
+                        try
+                        {
+                            // Asume que ExecuteWithRetry es un método asíncrono o ajusta tu implementación para que lo sea.
+                            // Es importante manejar las operaciones de espera de manera asíncrona en lugar de usar Thread.Sleep,
+                            // lo cual bloquearía el hilo de ejecución.
+                            await RetryPolicyHelper.ExecuteWithRetryAsync(async () =>
+                            {
+                                // Usa Task.Delay para la espera asíncrona.
+                                await Task.Delay(GenerateRandomNumber() + 1000);
+                                realMatch = bot.FindElements(By.XPath($"//*[text()='@{user}']"));
+                            });
+                        }
+                        catch (NoSuchElementException)
+                        {
+                            // Manejo opcional de la excepción
+                        }
                     });
+                    if (realMatch.Count > 0 && firstResult != null && firstResult.Text == "@" + user)
+                    {
+                        firstResult.Click();
+                    }
+                    else
+                    {
+                        return Task.CompletedTask;
+                    }
                 }
                 catch (Exception)
                 {
