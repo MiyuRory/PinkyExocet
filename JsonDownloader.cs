@@ -9,33 +9,35 @@ namespace PinkyExocet
 {
     public static class JsonDownloader
     {
-        public static Dictionary<string, long> DownloadAndParseJson(string url)
+        public static async Task<Dictionary<string, long>> DownloadAndParseJsonAsync(string url, CancellationToken cancellationToken = default)
         {
-            using (var httpClient = new HttpClient())
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException(cancellationToken);
+            using var httpClient = new HttpClient();
+
+            try
             {
-                try
+                // Realiza una solicitud GET sincrónica
+                var response = await httpClient.GetAsync(url, cancellationToken); // Nota: .Result bloquea hasta que la tarea asincrónica completa
+                if (response.IsSuccessStatusCode)
                 {
-                    // Realiza una solicitud GET sincrónica
-                    var response = httpClient.GetAsync(url).Result; // Nota: .Result bloquea hasta que la tarea asincrónica completa
-                    if (response.IsSuccessStatusCode)
-                    {
-                        // Lee el contenido de la respuesta como un string de manera sincrónica
-                        var jsonString = response.Content.ReadAsStringAsync().Result; // Uso de .Result aquí también
-                                                                                      // Deserializa el string JSON en un diccionario
-                        var result = JsonConvert.DeserializeObject<Dictionary<string, long>>(jsonString);
-                        return result;
-                    }
-                    else
-                    {
-                        throw new HttpRequestException($"Error al realizar la solicitud: {response.StatusCode}");
-                    }
+                    // Lee el contenido de la respuesta como un string de manera sincrónica
+                    var jsonString = await response.Content.ReadAsStringAsync(cancellationToken); // Uso de .Result aquí también
+                                                                                 // Deserializa el string JSON en un diccionario
+                    var result = JsonConvert.DeserializeObject<Dictionary<string, long>>(jsonString);
+                    return result ?? new Dictionary<string, long>();
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Ocurrió un error: {ex.Message}");
-                    return null;
+                    throw new HttpRequestException($"Error al realizar la solicitud: {response.StatusCode}");
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ocurrió un error: {ex.Message}");
+                return null ?? new Dictionary<string, long>();
+            }
+
         }
     }
 }

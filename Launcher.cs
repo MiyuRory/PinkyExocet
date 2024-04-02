@@ -1,13 +1,20 @@
+using System.Threading;
+
 namespace PinkyExocet
 {
     public partial class Launcher : Form
     {
-        private TwitterBot twitterBot;
+
         private BlockListManager blockListManager;
+        private CancellationTokenSource cancellationTokenSource;
+        private Mp3Player mp3Player;
         public Launcher()
         {
             InitializeComponent();
             blockListManager = new BlockListManager();
+            cancellationTokenSource = new CancellationTokenSource();
+            mp3Player = new Mp3Player();
+
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -29,44 +36,53 @@ namespace PinkyExocet
             return input;
         }
 
-        private void btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object sender, EventArgs e)
         {
-            twitterBot = new TwitterBot(txtUser.Text, txtPass.Text, flagDobleFactor.Checked);
-            twitterBot.Login();
+            btnDetener.Visible = true;
+            var twitterBot = new TwitterBot(txtUser.Text, txtPass.Text, flagDobleFactor.Checked);
+            await twitterBot.LoginAsync(cancellationTokenSource.Token); // Asumiendo que ahora LoginAsync es asíncrono
+
             foreach (var x in SplitStringIntoLines(txtUsersToBlock.Text))
             {
-
+                if (cancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    twitterBot.Stop();
+                    return;
+                }
                 try
                 {
                     var cleanUser = RemoveAtIfFirst(x.Trim());
-                    if (!blockListManager.IsInTheList(cleanUser))
-                        twitterBot.BlockUser(cleanUser);
-                    blockListManager.SaveInTheList(cleanUser);
+                    if (!await blockListManager.IsInTheListAsync(cleanUser, cancellationTokenSource.Token))
+                        await twitterBot.BlockUserAsync(cleanUser, cancellationTokenSource.Token); // Suponiendo que BlockUser es ahora BlockUserAsync y es asíncrono
+                    await blockListManager.SaveInTheListAsync(cleanUser);
                 }
                 catch (Exception)
                 {
-
-
+                    continue;
                 }
             }
 
             foreach (var x in SplitStringIntoLines(txtListas.Text))
             {
-                var keyValue = JsonDownloader.DownloadAndParseJson(x);
+                var keyValue = await JsonDownloader.DownloadAndParseJsonAsync(x, cancellationTokenSource.Token); // Asegúrate de que DownloadAndParseJson se convierta en DownloadAndParseJsonAsync
                 foreach (var kv in keyValue)
                 {
+                    if (cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        twitterBot.Stop();
+                        return;
+                    }
                     try
                     {
-                        if (!blockListManager.IsInTheList(kv.Key))
-                            twitterBot.BlockUser(kv.Key);
-                        blockListManager.SaveInTheList(kv.Key);
+                        if (!await blockListManager.IsInTheListAsync(kv.Key, cancellationTokenSource.Token))
+                            await twitterBot.BlockUserAsync(kv.Key, cancellationTokenSource.Token); // Usa la versión asíncrona
+                        await blockListManager.SaveInTheListAsync(kv.Key);
                     }
                     catch (Exception)
                     {
 
-
+                        continue;
                     }
-
                 }
             }
         }
@@ -83,5 +99,28 @@ namespace PinkyExocet
             return listOfLines;
         }
 
+        private void btnDetener_Click(object sender, EventArgs e)
+        {
+            btnDetener.Visible = false;
+            cancellationTokenSource.Cancel();
+
+        }
+
+        bool isPlaying = false; 
+
+        private async void fotito_Click(object sender, EventArgs e)
+        {
+            if(isPlaying)
+            {
+                isPlaying = false;
+                mp3Player.Stop();
+            }
+            else
+            {
+                isPlaying = true;
+                await mp3Player.PlayAsync("malvinas.mp3");
+            }            
+            
+        }
     }
 }

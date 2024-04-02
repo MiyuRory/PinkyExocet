@@ -1,29 +1,20 @@
 ﻿using OpenQA.Selenium;
 using Polly;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace PinkyExocet
+public static class RetryPolicyHelper
 {
-    public static class RetryPolicyHelper
-    {
-        // Define a retry policy that is static so it's only set up once
-        private static readonly Policy RetryPolicy = Policy
-            .Handle<ElementNotInteractableException>()
-            .Or<Exception>()
-            .Or<NoSuchElementException>()
-            .Retry(10, onRetry: (exception, retryCount, context) =>
-            {
-                
-            });
+    // Define una política de reintentos estática para configurarla solo una vez
+    private static readonly AsyncPolicy RetryPolicy = Policy
+        .Handle<ElementNotInteractableException>()
+        .Or<Exception>()
+        .Or<NoSuchElementException>()
+        .RetryAsync(10);
 
-        // This method accepts an Action delegate and executes it under the retry policy
-        public static void ExecuteWithRetry(Action actionToExecute)
-        {
-            RetryPolicy.Execute(actionToExecute);
-        }
+    // Este método acepta un delegado Func<Task> y lo ejecuta bajo la política de reintentos
+    public static async Task ExecuteWithRetryAsync(Func<Task> actionToExecuteAsync)
+    {
+        await RetryPolicy.ExecuteAsync(actionToExecuteAsync);
     }
 }
