@@ -70,7 +70,7 @@ namespace PinkyExocet
                         await Task.Delay(GenerateRandomNumber() + 2000);
                         var codeField = bot.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]/div[1]/div[2]/div[2]/div[1]/div[1]/div[2]/label[1]/div[1]/div[2]/div[1]/input[1]"));
                         codeField.SendKeys(Interaction.InputBox("Authenticator code"));
-                        await Task.Delay(GenerateRandomNumber() + 2000);
+                        await Task.Delay(GenerateRandomNumber() + 20000);
                     });
 
                     await RetryPolicyHelper.ExecuteWithRetryAsync(async () =>
